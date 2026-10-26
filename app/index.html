@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project Pulse</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="dashboard-header">
+    <h1>Project Pulse</h1>
+    <p>See every active project's owner, status, recent activity, and priority at a glance.</p>
+  </header>
+
+  <main class="dashboard">
+    <p class="dashboard-message dashboard-message--loading" role="status" aria-live="polite">Loading projects…</p>
+    <ul class="project-grid" aria-label="Projects"></ul>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var DATA_URL = "project-data.json";
+      var LAUNCH_HINT = "Start the dashboard with Run and Debug → \"Run Project Pulse Dashboard\" and open it from http://localhost:5500/index.html.";
+
+      // Allowed values from the shared contract, mapped to readable labels.
+      var STATUS_LABELS = {
+        "on-track": "On track",
+        "at-risk": "At risk",
+        "blocked": "Blocked",
+        "completed": "Completed"
+      };
+      var PRIORITY_LABELS = {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      };
+
+      var messageElement = document.querySelector(".dashboard-message");
+      var gridElement = document.querySelector(".project-grid");
+
+      // Show a loading, empty, or error message in the live region.
+      function showMessage(kind, text) {
+        messageElement.className = "dashboard-message dashboard-message--" + kind;
+        messageElement.textContent = text;
+        messageElement.hidden = false;
+      }
+
+      function hideMessage() {
+        messageElement.className = "dashboard-message";
+        messageElement.textContent = "";
+        messageElement.hidden = true;
+      }
+
+      // Return a trimmed string, or "" when the value is missing or not text.
+      function cleanText(value) {
+        if (typeof value === "string") {
+          return value.trim();
+        }
+        if (typeof value === "number") {
+          return String(value);
+        }
+        return "";
+      }
+
+      // " At Risk " -> "at-risk"; anything outside the allowed list -> "unknown".
+      function normalizeKey(value, allowedLabels) {
+        var key = cleanText(value).toLowerCase().replace(/\s+/g, "-");
+        return Object.prototype.hasOwnProperty.call(allowedLabels, key) ? key : "unknown";
+      }
+
+      // Known values get a readable label; unknown values keep the original text.
+      function displayLabel(rawValue, key, allowedLabels) {
+        if (key !== "unknown") {
+          return allowedLabels[key];
+        }
+        var original = cleanText(rawValue);
+        return original === "" ? "Not set" : original;
+      }
+
+      function createTextElement(tagName, className, text) {
+        var element = document.createElement(tagName);
+        element.className = className;
+        element.textContent = text;
+        return element;
+      }
+
+      function createLabelledParagraph(className, labelText, valueText) {
+        var paragraph = document.createElement("p");
+        paragraph.className = className;
+        var label = document.createElement("strong");
+        label.textContent = labelText + ": ";
+        paragraph.appendChild(label);
+        paragraph.appendChild(document.createTextNode(valueText));
+        return paragraph;
+      }
+
+      function createProjectCard(project) {
+        var safeProject = project && typeof project === "object" ? project : {};
+
+        var name = cleanText(safeProject.name) || "Not set";
+        var owner = cleanText(safeProject.owner) || "Unassigned";
+        var recentActivity = cleanText(safeProject.recentActivity) || "Not set";
+        var summary = cleanText(safeProject.summary);
+
+        var statusKey = normalizeKey(safeProject.status, STATUS_LABELS);
+        var priorityKey = normalizeKey(safeProject.priority, PRIORITY_LABELS);
+        var statusText = displayLabel(safeProject.status, statusKey, STATUS_LABELS);
+        var priorityText = displayLabel(safeProject.priority, priorityKey, PRIORITY_LABELS);
+
+        var listItem = document.createElement("li");
+        var card = document.createElement("article");
+        card.className = "project-card";
+        card.dataset.status = statusKey;
+        card.dataset.priority = priorityKey;
+
+        card.appendChild(createTextElement("h2", "project-card__name", name));
+        card.appendChild(createLabelledParagraph("project-card__owner", "Owner", owner));
+
+        var statusBadge = document.createElement("span");
+        statusBadge.className = "status-badge status-badge--" + statusKey;
+        statusBadge.appendChild(createTextElement("span", "visually-hidden", "Status: "));
+        statusBadge.appendChild(document.createTextNode(statusText));
+        statusBadge.title = "Status: " + statusText;
+        card.appendChild(statusBadge);
+
+        card.appendChild(document.createTextNode(" "));
+
+        var priorityBadge = createTextElement("span", "priority-badge priority-badge--" + priorityKey, priorityText + " priority");
+        priorityBadge.title = "Priority: " + priorityText;
+        card.appendChild(priorityBadge);
+
+        card.appendChild(createLabelledParagraph("project-card__activity", "Recent activity", recentActivity));
+
+        if (summary !== "") {
+          card.appendChild(createTextElement("p", "project-card__summary", summary));
+        }
+
+        listItem.appendChild(card);
+        return listItem;
+      }
+
+      function renderProjects(projects) {
+        gridElement.replaceChildren();
+
+        if (projects.length === 0) {
+          showMessage("empty", "No projects yet");
+          return;
+        }
+
+        projects.forEach(function (project) {
+          gridElement.appendChild(createProjectCard(project));
+        });
+        hideMessage();
+      }
+
+      function loadProjects() {
+        showMessage("loading", "Loading projects…");
+
+        if (window.location.protocol === "file:") {
+          console.error("Project Pulse: fetch is not available for file:// pages.");
+          showMessage("error", "Project data can't load when this page is opened directly from disk. " + LAUNCH_HINT);
+          return;
+        }
+
+        fetch('project-data.json')
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error("HTTP " + response.status + " while loading " + DATA_URL);
+            }
+            return response.json();
+          })
+          .then(function (data) {
+            if (!data || !Array.isArray(data.projects)) {
+              throw new Error("Expected a top-level \"projects\" array in " + DATA_URL);
+            }
+            renderProjects(data.projects);
+          })
+          .catch(function (error) {
+            console.error("Project Pulse: could not load project data.", error);
+            showMessage("error", "Project data couldn't be loaded. Check that " + DATA_URL + " exists and is valid JSON. " + LAUNCH_HINT);
+          });
+      }
+
+      loadProjects();
+    })();
+  </script>
+</body>
+</html>

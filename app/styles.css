@@ -1,0 +1,621 @@
+/* ==========================================================================
+   Project Pulse — dashboard styles
+   Owner: Designer (app/styles.css only)
+   Markup contract: docs/project-pulse-plan.md → "Page structure and class names"
+
+   Contrast notes (WCAG 2.x relative luminance, approximate):
+   - Body text  #1f2937 on #ffffff ............ ~14.7:1
+   - Muted text #4b5563 on #ffffff ............ ~7.6:1  (on page bg ~7.0:1)
+   - Header     #ffffff on #4338ca ............ ~7.9:1  (darkest stop #312e81 ~12:1)
+   - Status / priority / message pairs are documented beside each token.
+   ========================================================================== */
+
+/* ---------- 1. Design tokens ---------- */
+:root {
+  /* Surfaces & text */
+  --pp-bg: #f4f6fb;
+  --pp-surface: #ffffff;
+  --pp-surface-subtle: #f9fafb;
+  --pp-border: #e5e7eb;
+  --pp-text: #1f2937;
+  --pp-text-muted: #4b5563;
+
+  /* Brand (header, focus ring) */
+  --pp-brand-900: #312e81;
+  --pp-brand-700: #4338ca;
+  --pp-brand-100: #e0e7ff;
+  --pp-focus: #4338ca;
+
+  /* Status badges: text on tint (all >= 8:1) */
+  --pp-status-on-track-bg: #dcfce7;
+  --pp-status-on-track-fg: #14532d;   /* ~8.3:1 */
+  --pp-status-at-risk-bg: #fef3c7;
+  --pp-status-at-risk-fg: #78350f;    /* ~8.2:1 */
+  --pp-status-blocked-bg: #fee2e2;
+  --pp-status-blocked-fg: #7f1d1d;    /* ~8.2:1 */
+  --pp-status-completed-bg: #dbeafe;
+  --pp-status-completed-fg: #1e3a8a;  /* ~8.5:1 */
+  --pp-status-unknown-bg: #f3f4f6;
+  --pp-status-unknown-fg: #374151;    /* ~9.4:1 */
+
+  /* Priority: text on tint (>= 4.8:1) and card accent border (>= 3:1 non-text) */
+  --pp-priority-high-fg: #b91c1c;     /* ~5.9:1 on tint, ~6.5:1 on white */
+  --pp-priority-high-bg: #fef2f2;
+  --pp-priority-high-accent: #dc2626; /* ~4.4:1 vs white */
+  --pp-priority-medium-fg: #b45309;   /* ~4.8:1 on tint, ~5.0:1 on white */
+  --pp-priority-medium-bg: #fffbeb;
+  --pp-priority-medium-accent: #d97706; /* ~3.2:1 vs white */
+  --pp-priority-low-fg: #0f766e;      /* ~5.3:1 on tint, ~5.5:1 on white */
+  --pp-priority-low-bg: #f0fdfa;
+  --pp-priority-low-accent: #0f766e;
+  --pp-priority-unknown-fg: #4b5563;  /* ~7.2:1 on tint */
+  --pp-priority-unknown-bg: #f3f4f6;
+  --pp-priority-unknown-accent: #9ca3af;
+
+  /* Messages */
+  --pp-msg-loading-bg: #eef2ff;
+  --pp-msg-loading-fg: #3730a3;       /* ~8.9:1 */
+  --pp-msg-empty-bg: #ffffff;
+  --pp-msg-empty-fg: #374151;         /* ~10.3:1 */
+  --pp-msg-error-bg: #fef2f2;
+  --pp-msg-error-fg: #991b1b;         /* ~7.6:1 */
+  --pp-msg-error-accent: #dc2626;
+
+  /* Shape, depth, rhythm */
+  --pp-radius-lg: 14px;
+  --pp-radius-md: 10px;
+  --pp-radius-pill: 999px;
+  --pp-shadow-card: 0 1px 2px rgba(17, 24, 39, 0.06), 0 4px 12px rgba(17, 24, 39, 0.08);
+  --pp-shadow-card-hover: 0 2px 4px rgba(17, 24, 39, 0.08), 0 12px 24px rgba(17, 24, 39, 0.12);
+  --pp-space-1: 0.25rem;
+  --pp-space-2: 0.5rem;
+  --pp-space-3: 0.75rem;
+  --pp-space-4: 1rem;
+  --pp-space-5: 1.5rem;
+  --pp-space-6: 2rem;
+  --pp-max-width: 76rem;
+  --pp-gutter: clamp(1rem, 4vw, 2rem);
+
+  --pp-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* ---------- 2. Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 100%; /* respect user setting; 1rem = 16px by default */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--pp-font);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--pp-text);
+  background: var(--pp-bg);
+  overflow-x: hidden; /* safety net; layout itself never exceeds the viewport */
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+/* Screen-reader-only text (e.g. "Status: " inside .status-badge).
+   Absolutely positioned, so it also drops out of the badge's flex layout/gap. */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Universal, highly visible keyboard focus */
+:focus-visible {
+  outline: 3px solid var(--pp-focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ---------- 3. Header ---------- */
+.dashboard-header {
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--pp-brand-900) 0%, var(--pp-brand-700) 100%);
+  padding: var(--pp-space-6) var(--pp-gutter) calc(var(--pp-space-6) + var(--pp-space-4));
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Center header content to the same column as the dashboard,
+   whether or not the Coder adds an inner wrapper. */
+.dashboard-header > * {
+  max-width: var(--pp-max-width);
+  margin-inline: auto;
+}
+
+.dashboard-header h1 {
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-3);
+  font-size: clamp(1.75rem, 1.2rem + 2.5vw, 2.5rem);
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* Decorative "pulse" mark — no text content, so nothing is announced */
+.dashboard-header h1::before {
+  content: "";
+  flex: none;
+  width: 0.75em;
+  height: 0.75em;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 0 0.18em rgba(74, 222, 128, 0.3);
+}
+
+.dashboard-header p {
+  margin-top: var(--pp-space-2);
+  font-size: 1.0625rem;
+  color: var(--pp-brand-100); /* ~6.3:1 on #4338ca */
+}
+
+.dashboard-header h1 + p {
+  max-width: var(--pp-max-width);
+}
+
+/* ---------- 4. Dashboard root ---------- */
+.dashboard {
+  max-width: calc(var(--pp-max-width) + 2 * var(--pp-gutter));
+  margin: calc(-1 * var(--pp-space-5)) auto 0; /* cards overlap the header band */
+  padding: 0 var(--pp-gutter) var(--pp-space-6);
+}
+
+/* ---------- 5. Status messages ---------- */
+.dashboard-message {
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-3);
+  margin-bottom: var(--pp-space-5);
+  padding: var(--pp-space-4) var(--pp-space-5);
+  border-radius: var(--pp-radius-md);
+  border: 1px solid var(--pp-border);
+  background: var(--pp-surface);
+  box-shadow: var(--pp-shadow-card);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+/* Hide the message box when the script sets [hidden] or clears it.
+   !important so the display:flex above (and modifiers) can never override it. */
+.dashboard-message[hidden],
+.dashboard-message:empty {
+  display: none !important;
+}
+
+.dashboard-message--loading {
+  background: var(--pp-msg-loading-bg);
+  color: var(--pp-msg-loading-fg);
+  border-color: #c7d2fe;
+}
+
+/* Spinner (decorative) */
+.dashboard-message--loading::before {
+  content: "";
+  flex: none;
+  width: 1.1em;
+  height: 1.1em;
+  border-radius: 50%;
+  border: 3px solid currentColor;
+  border-right-color: transparent;
+  animation: pp-spin 0.9s linear infinite;
+}
+
+.dashboard-message--empty {
+  justify-content: center;
+  padding-block: var(--pp-space-6);
+  background: var(--pp-msg-empty-bg);
+  color: var(--pp-msg-empty-fg);
+  border: 2px dashed #9ca3af;
+  box-shadow: none;
+  font-size: 1.125rem;
+  text-align: center;
+}
+
+.dashboard-message--error {
+  background: var(--pp-msg-error-bg);
+  color: var(--pp-msg-error-fg);
+  border-color: #fecaca;
+  border-left: 6px solid var(--pp-msg-error-accent);
+}
+
+/* Text icon reinforces the error state (not color-only) */
+.dashboard-message--error::before {
+  content: "!";
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--pp-msg-error-accent);
+  color: #ffffff;
+  font-weight: 800;
+  line-height: 1;
+}
+
+@keyframes pp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- 6. Grid ---------- */
+.project-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: var(--pp-space-5);
+}
+
+.project-grid > li {
+  display: flex; /* lets cards stretch to equal row height */
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------- 7. Project card ---------- */
+.project-card {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: center;
+  gap: var(--pp-space-3) var(--pp-space-2);
+  padding: var(--pp-space-5);
+  padding-left: calc(var(--pp-space-5) + 2px);
+  background: var(--pp-surface);
+  border: 1px solid var(--pp-border);
+  border-left: 5px solid var(--pp-priority-unknown-accent);
+  border-radius: var(--pp-radius-lg);
+  box-shadow: var(--pp-shadow-card);
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+
+/* Every child takes a full row by default; badges sit side by side.
+   Works whether badges are direct children or wrapped by the Coder.
+   The whitespace text node between the badges is ignored by flex layout,
+   so spacing comes only from `gap`. */
+.project-card > * {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.project-card > .status-badge,
+.project-card > .priority-badge {
+  flex: 0 0 auto;
+}
+
+.project-card:hover {
+  box-shadow: var(--pp-shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.project-card:focus-within {
+  box-shadow: var(--pp-shadow-card-hover);
+}
+
+.project-card:focus-visible {
+  outline: 3px solid var(--pp-focus);
+  outline-offset: 3px;
+}
+
+/* Priority accent — weight increases with priority (width + color) */
+.project-card[data-priority="high"] {
+  border-left: 8px solid var(--pp-priority-high-accent);
+  padding-left: var(--pp-space-5);
+}
+
+.project-card[data-priority="medium"] {
+  border-left: 6px solid var(--pp-priority-medium-accent);
+  padding-left: calc(var(--pp-space-5) + 1px);
+}
+
+.project-card[data-priority="low"] {
+  border-left: 4px solid var(--pp-priority-low-accent);
+  padding-left: calc(var(--pp-space-5) + 3px);
+}
+
+.project-card[data-priority="unknown"] {
+  border-left: 4px dashed var(--pp-priority-unknown-accent);
+  padding-left: calc(var(--pp-space-5) + 3px);
+}
+
+/* Completed work recedes slightly so active work leads the eye */
+.project-card[data-status="completed"] {
+  background: var(--pp-surface-subtle);
+}
+
+/* Blocked work gets a faint warning wash at the top edge */
+.project-card[data-status="blocked"] {
+  background-image: linear-gradient(to bottom, rgba(254, 226, 226, 0.55), rgba(255, 255, 255, 0) 4.5rem);
+}
+
+.project-card__name {
+  font-size: 1.25rem;
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--pp-text);
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
+.project-card__owner {
+  margin-top: calc(-1 * var(--pp-space-2));
+  color: var(--pp-text-muted);
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+/* "Owner:" label — inline, semibold; the name keeps the muted tone */
+.project-card__owner strong {
+  font-weight: 600;
+  color: var(--pp-text);
+}
+
+.project-card__activity {
+  padding: var(--pp-space-3) var(--pp-space-4);
+  background: var(--pp-surface-subtle);
+  border: 1px solid var(--pp-border);
+  border-radius: var(--pp-radius-md);
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+/* "Recent activity" label — supports several reasonable markup choices */
+.project-card__activity strong,
+.project-card__activity b,
+.project-card__activity .project-card__label {
+  display: block;
+  margin-bottom: var(--pp-space-1);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pp-text-muted); /* ~7.2:1 on #f9fafb */
+}
+
+.project-card__summary {
+  color: var(--pp-text);
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 8. Badges (shared) ---------- */
+.status-badge,
+.priority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  max-width: 100%;
+  min-height: 1.75rem;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid transparent; /* becomes visible in forced-colors mode */
+  border-radius: var(--pp-radius-pill);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 9. Status badges: filled pill + dot ---------- */
+.status-badge::before {
+  content: "";
+  flex: none;
+  width: 0.55em;
+  height: 0.55em;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-badge--on-track {
+  background: var(--pp-status-on-track-bg);
+  color: var(--pp-status-on-track-fg);
+}
+
+.status-badge--at-risk {
+  background: var(--pp-status-at-risk-bg);
+  color: var(--pp-status-at-risk-fg);
+}
+
+.status-badge--blocked {
+  background: var(--pp-status-blocked-bg);
+  color: var(--pp-status-blocked-fg);
+}
+
+/* Blocked uses a square marker — shape difference, not just color */
+.status-badge--blocked::before {
+  border-radius: 1px;
+}
+
+.status-badge--completed {
+  background: var(--pp-status-completed-bg);
+  color: var(--pp-status-completed-fg);
+}
+
+.status-badge--unknown {
+  background: var(--pp-status-unknown-bg);
+  color: var(--pp-status-unknown-fg);
+  border-color: #d1d5db;
+}
+
+.status-badge--unknown::before {
+  background: transparent;
+  border: 2px solid currentColor;
+}
+
+/* ---------- 10. Priority badges: outlined pill + signal bars ---------- */
+.priority-badge {
+  border-color: currentColor;
+}
+
+/* Three-bar "signal" icon; bar fill encodes level (decorative, text carries meaning) */
+.priority-badge::before {
+  content: "";
+  flex: none;
+  width: 0.85em;
+  height: 0.75em;
+  background:
+    linear-gradient(currentColor, currentColor) 0 100% / 22% 40% no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 100% / 22% 70% no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 100% / 22% 100% no-repeat;
+  opacity: 0.35;
+}
+
+.priority-badge--high {
+  background: var(--pp-priority-high-bg);
+  color: var(--pp-priority-high-fg);
+}
+
+.priority-badge--high::before {
+  opacity: 1;
+}
+
+.priority-badge--medium {
+  background: var(--pp-priority-medium-bg);
+  color: var(--pp-priority-medium-fg);
+}
+
+.priority-badge--medium::before {
+  background:
+    linear-gradient(currentColor, currentColor) 0 100% / 22% 40% no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 100% / 22% 70% no-repeat,
+    linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15)) 100% 100% / 22% 100% no-repeat;
+  opacity: 1;
+}
+
+.priority-badge--low {
+  background: var(--pp-priority-low-bg);
+  color: var(--pp-priority-low-fg);
+}
+
+.priority-badge--low::before {
+  background:
+    linear-gradient(currentColor, currentColor) 0 100% / 22% 40% no-repeat,
+    linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15)) 50% 100% / 22% 70% no-repeat,
+    linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15)) 100% 100% / 22% 100% no-repeat;
+  opacity: 1;
+}
+
+.priority-badge--unknown {
+  background: var(--pp-priority-unknown-bg);
+  color: var(--pp-priority-unknown-fg);
+  border-style: dashed;
+}
+
+/* ---------- 11. Responsive tweaks ---------- */
+@media (max-width: 30rem) {
+  .dashboard-header {
+    padding-top: var(--pp-space-5);
+  }
+
+  .project-grid {
+    gap: var(--pp-space-4);
+  }
+
+  .project-card {
+    padding: var(--pp-space-4);
+  }
+
+  .project-card[data-priority] {
+    padding-left: var(--pp-space-4);
+  }
+
+  .dashboard-message {
+    padding: var(--pp-space-3) var(--pp-space-4);
+  }
+}
+
+/* ---------- 12. Motion & system preferences ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .project-card:hover {
+    transform: none;
+  }
+
+  /* Static ring instead of a spinner */
+  .dashboard-message--loading::before {
+    animation: none;
+    border-right-color: currentColor;
+    opacity: 0.6;
+  }
+}
+
+/* Windows High Contrast / forced colors: keep structure visible */
+@media (forced-colors: active) {
+  .project-card,
+  .status-badge,
+  .priority-badge,
+  .dashboard-message {
+    border: 1px solid CanvasText;
+  }
+
+  .project-card[data-priority="high"] {
+    border-left-width: 8px;
+  }
+
+  .status-badge::before,
+  .dashboard-header h1::before {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+}
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  .dashboard-header {
+    background: none;
+    color: #000000;
+  }
+
+  .dashboard-header p {
+    color: #374151;
+  }
+
+  .project-card {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+}

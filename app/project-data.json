@@ -1,0 +1,57 @@
+{
+  "projects": [
+    {
+      "id": "onboarding-revamp",
+      "name": "Contributor Onboarding Revamp",
+      "owner": "Mona Lisa",
+      "status": "on-track",
+      "recentActivity": "Merged the new first-issue guide and updated the welcome checklist.",
+      "priority": "high",
+      "summary": "Make it easier for new contributors to land their first pull request within a week."
+    },
+    {
+      "id": "docs-search",
+      "name": "Documentation Search",
+      "owner": "Hubot",
+      "status": "at-risk",
+      "recentActivity": "Search index build is timing out on large pages; investigating chunked indexing.",
+      "priority": "medium",
+      "summary": "Add fast full-text search across all project documentation."
+    },
+    {
+      "id": "ci-migration",
+      "name": "CI Pipeline Migration",
+      "owner": "Octocat",
+      "status": "blocked",
+      "recentActivity": "Waiting on runner access approval from the infrastructure team.",
+      "priority": "high",
+      "summary": "Move all builds to GitHub Actions and retire the legacy CI server."
+    },
+    {
+      "id": "release-notes",
+      "name": "Automated Release Notes",
+      "owner": "Ada Lovelace",
+      "status": "completed",
+      "recentActivity": "Shipped in v2.4; release notes now generate from labeled pull requests.",
+      "priority": "low",
+      "summary": "Generate release notes automatically from merged pull requests."
+    },
+    {
+      "id": "accessibility-audit",
+      "name": "Cross-Platform Accessibility Audit and Remediation Program for Every Public-Facing Dashboard, Form, and Documentation Page",
+      "owner": "Grace Hopper",
+      "status": "on-track",
+      "recentActivity": "Completed keyboard-navigation review for the settings pages; contrast fixes for charts are in review and expected to merge this week.",
+      "priority": "medium",
+      "summary": "Audit and fix accessibility issues so every page meets WCAG 2.2 AA."
+    },
+    {
+      "id": "design-tokens",
+      "name": "Design Token Cleanup",
+      "owner": "Alan Turing",
+      "status": "at-risk",
+      "recentActivity": "Two teams still use legacy color variables; migration guide drafted.",
+      "priority": "low"
+    }
+  ]
+}
